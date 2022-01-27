@@ -21,18 +21,27 @@ async function run() {
 
     const database = client.db("traveling_bees");
     const blogsCollection = database.collection("blogs");
+    const usersCollection = database.collection("users");
 
     //   blogs get from api
     app.get("/blogs", async (req, res) => {
       const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page);
       const cursor = blogsCollection.find({});
+      const count = await cursor.count();
       let result;
-      if (size) {
-        result = await cursor.limit(size).toArray();
+      if (page) {
+        result = await cursor
+          .skip(page * size)
+          .limit(size)
+          .toArray();
       } else {
         result = await cursor.toArray();
       }
-      res.json(result);
+      res.json({
+        count,
+        result,
+      });
     });
     //   blogs post from client to the api
     app.post("/blogs", async (req, res) => {
@@ -107,6 +116,49 @@ async function run() {
       const result = await blogsCollection.updateOne(query, updateDoc, options);
       console.log(result);
       res.json(result);
+    });
+    // see all users
+    app.get("/users", async (req, res) => {
+      const cursor = usersCollection.find({});
+      const result = await cursor.toArray();
+      res.json(result);
+    });
+    // user collection
+    app.post("/users", async (req, res) => {
+      const usersContent = req.body;
+      const cursor = await usersCollection.insertOne(usersContent);
+      res.json(cursor);
+    });
+
+    // user collection
+    app.put("/users", async (req, res) => {
+      const usersContent = req.body;
+      const query = { email: usersContent.email };
+      const options = { upsert: true };
+      const updateDoc = { $set: usersContent };
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      res.json(result);
+    });
+
+    // user collection
+    app.put("/users/admin", async (req, res) => {
+      const usersContent = req.body;
+      const query = { email: usersContent.email };
+      const updateDoc = { $set: { role: "admin" } };
+      const result = await usersCollection.updateOne(query, updateDoc);
+      res.json(result);
+    });
+
+    // check admin status
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      let isAdmin = false;
+      if (user?.role === "admin") {
+        isAdmin = true;
+      }
+      res.json({ admin: isAdmin });
     });
   } finally {
     // await client.close();
