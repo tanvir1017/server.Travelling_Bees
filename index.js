@@ -94,6 +94,20 @@ async function run() {
       );
       res.json(result);
     });
+
+    // update single data
+    app.put("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const approved = req.body.approved;
+      console.log(approved);
+      const query = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = { $set: { approved: approved } };
+      console.log(updateDoc);
+      const result = await blogsCollection.updateOne(query, updateDoc, options);
+      console.log(result);
+      res.json(result);
+    });
   } finally {
     // await client.close();
   }
