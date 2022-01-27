@@ -24,16 +24,21 @@ async function run() {
 
     //   blogs get from api
     app.get("/blogs", async (req, res) => {
+      const size = parseInt(req.query.size);
       const cursor = blogsCollection.find({});
-      const result = await cursor.toArray();
+      let result;
+      if (size) {
+        result = await cursor.limit(size).toArray();
+      } else {
+        result = await cursor.toArray();
+      }
       res.json(result);
     });
     //   blogs post from client to the api
-    app.get("/blogs", async (req, res) => {
+    app.post("/blogs", async (req, res) => {
       const blogContent = req.body;
-      const cursor = blogsCollection.insertOne(blogContent);
-      const result = await cursor.toArray();
-      res.json(result);
+      const cursor = await blogsCollection.insertOne(blogContent);
+      res.json(cursor);
     });
 
     //   get data by single user
@@ -43,12 +48,51 @@ async function run() {
       const cursor = await blogsCollection.findOne(query);
       res.json(cursor);
     });
-    //   get data by single user
+    //   delete data by single user
     app.delete("/blogs/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const cursor = await blogsCollection.deleteOne(query);
       res.json(cursor);
+    });
+
+    // single api for order manage
+    app.get("/blogs/manageOrders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const cursor = await blogsCollection.findOne(query);
+      res.json(cursor);
+    });
+    // single api for order manage
+    app.put("/blogs/manageOrders/:id", async (req, res) => {
+      const id = req.params.id;
+      const content = req.body;
+      const query = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const data = {
+        title: content.title,
+        blog_cover: content.blog_cover,
+        writer_img: content.writer_img,
+        sub_desc: content.sub_desc,
+        writer_name: content.writer_name,
+        writer_about_title: content.writer_about_title,
+        writer_about_img: content.writer_about_img,
+        releted_title1: content.releted_title1,
+        releted_title2: content.releted_title2,
+        releted_desc1: content.releted_desc1,
+        releted_desc2: content.releted_desc2,
+        releted_img1: content.releted_img1,
+        releted_img2: content.releted_img2,
+        releted_img3: content.releted_img3,
+        releted_img4: content.releted_img4,
+      };
+      const updatedContent = { $set: data };
+      const result = await blogsCollection.updateOne(
+        query,
+        updatedContent,
+        options
+      );
+      res.json(result);
     });
   } finally {
     // await client.close();
