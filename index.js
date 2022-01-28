@@ -22,6 +22,7 @@ async function run() {
     const database = client.db("traveling_bees");
     const blogsCollection = database.collection("blogs");
     const usersCollection = database.collection("users");
+    const commentCollection = database.collection("comment");
 
     //   blogs get from api
     app.get("/blogs", async (req, res) => {
@@ -114,7 +115,6 @@ async function run() {
       const updateDoc = { $set: { approved: approved } };
       console.log(updateDoc);
       const result = await blogsCollection.updateOne(query, updateDoc, options);
-      console.log(result);
       res.json(result);
     });
     // see all users
@@ -159,6 +159,15 @@ async function run() {
         isAdmin = true;
       }
       res.json({ admin: isAdmin });
+    });
+
+    // collecting comment by post
+    app.post("/comment", async (req, res) => {
+      const commentContent = req.body;
+      console.log(req.body);
+      const result = await commentCollection.insertOne(commentContent);
+      console.log(result);
+      res.json(result);
     });
   } finally {
     // await client.close();
